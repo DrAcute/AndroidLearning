@@ -58,7 +58,7 @@ JNIEXPORT jstring JNICALL Java_com_example_dracute_ndktest_MainActivity_getStrin
 
 ```
 
-** 把此文件移到jni目录下，不然可能会出现execution failed for task ':app:compileDebugNdk'的bug **
+***把此文件移到jni目录下，不然可能会出现execution failed for task appcompileDebugNdk的bug***
 
 ### 加入.c文件
 在jni目录下新建一个 .c文件。来实现头文件里面声明的方法。如main.c
