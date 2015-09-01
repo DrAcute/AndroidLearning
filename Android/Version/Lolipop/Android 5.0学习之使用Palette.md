@@ -2,7 +2,7 @@
 
 根据图片来决定标题的颜色和标题栏的背景色，这样视觉上更具有冲击力和新鲜感，而不像统一色调那样呆板。
 
-![Android 5.0学习之使用Palette _1.jpg]({{site.baseurl}}/Images/Android 5.0学习之使用Palette _1.jpg)
+![Android 5.0学习之使用Palette _1.jpg](/Images/Android 5.0学习之使用Palette _1.jpg)
 
 
 ### Palette是什么？
