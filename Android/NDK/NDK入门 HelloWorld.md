@@ -98,4 +98,4 @@ public class MainActivity extends AppCompatActivity {
 
 ### 运行！
 
-![NDK入门 HelloWorld _1.jpg](/Images/NDK入门 HelloWorld _1.jpg)
+[NDK入门 HelloWorld _1.jpg](/Images/NDK入门 HelloWorld _1.jpg)
