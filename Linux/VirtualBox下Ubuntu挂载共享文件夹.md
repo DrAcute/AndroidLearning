@@ -11,10 +11,10 @@ sudo apt-get install virtualbox-guest-dkms
 
 ```linux
 sudo mkdir /mnt/shared
-sudo mount -t vboxsf share /mnt/shared
+sudo mount -t vboxsf Ubuntu_Share /mnt/shared
 ```
 
-其中"share"是之前创建的共享文件夹的名字。OK，现在Ubuntu和主机可以互传文件了。
+其中"Ubuntu_Share"是之前创建的共享文件夹的名字。OK，现在Ubuntu和主机可以互传文件了。
 
 要想自动挂载的话，可以在/etc/fstab中添加一项
 
