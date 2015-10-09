@@ -39,6 +39,26 @@ mViewDragHelper = ViewDragHelper.create(this, 1.0f, new ViewDragHelper.Callback(
 
 ```
 
+要让ViewDragHelper能够处理拖动需要将触摸事件传递给ViewDragHelper，这点和gesturedetector是一样的
+
+```java
+@Override  
+public boolean onInterceptTouchEvent(MotionEvent ev) {  
+    final int action = MotionEventCompat.getActionMasked(ev);  
+    if (action == MotionEvent.ACTION_CANCEL || action == MotionEvent.ACTION_UP) {  
+        mDragHelper.cancel();  
+        return false;  
+    }  
+    return mDragHelper.shouldInterceptTouchEvent(ev);  
+}  
+
+@Override  
+public boolean onTouchEvent(MotionEvent ev) {  
+    mDragHelper.processTouchEvent(ev);  
+    return true;
+}  
+```
+
 #### 边界检测
 
 调用setEdgeTrackingEnabled方法，并且在Callback中重写 onEdgeTouched, onEdgeDragStarted 等方法
