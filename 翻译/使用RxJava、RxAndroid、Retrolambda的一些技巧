@@ -1,0 +1,295 @@
+[原文]https://medium.com/swlh/party-tricks-with-rxjava-rxandroid-retrolambda-1b06ed7cd29c#.y3o8g1a6n
+
+*大家都在用，你也一起来吧*
+
+“用户要实时数据，我们很确信的是他们要**马上**得到推文”。作为开发者，要“自动跟踪”的处理消息，而不是阻塞线程去等待消息。
+你要在消息准备好时推送给你。甚至，当在处理大数据集时，要分个接受准备好的数据，而不是全部推送给你。现有很多获取数据的开发库，然而我们需要对获取到的数据做出响应的库。
+
+*神说，要有光，还要，响应式框架*
+
+“一个通过观察序列来构建异步事件驱动程序的库”这样的描述非常适合用来介绍框架用来“卸货”进行并发与管理的目的，具体是使用一系列的并发来缓解主线程压力（通常是UI线程）。
+一个流行的用法是维持响应式的UI，主要是来提高移动端用户的体验。
+
+我花了好几个月来学习，并决定分享一些用法示意。
+
+记住：
+
+> **Observables** 和 **Subscribers** 是最基本组成， **Observable** 发送信息，**Subscriber** 接受信息。
+
+#### 项目依赖
+
+```java
+dependencies {
+  compile 'io.reactivex:rxjava:1.1.0'
+  compile 'io.reactivex:rxandroid:1.1.0'
+  compile 'com.jakewharton.rxbinding:rxbinding:0.3.0'
+}
+```
+
+配置retrolambda
+
+> https://github.com/orfjackal/retrolambda
+
+相关链接：配置retrolambda的简单小教程 https://medium.com/@cesarmcferreira/retrolambda-on-android-191cc8151f85
+
+#### 下面是用法示意
+
+##### View Click
+
+用来代替麻烦的 setOnClickListener
+
+```java
+RxView.clicks(submitButton).subscribe(o -> log("submit button clicked!"));
+```
+
+#### Filter even numbers
+
+```java
+Observable
+    .just(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    .filter(integer -> integer % 2 == 0)
+    .subscribe(System.out::println);
+
+    // => 2, 4, 6, 8, 10
+```
+
+#### Iterating with "forEach"
+
+```java
+Observable
+    .just(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    .forEach(System.out::println);
+
+    // => 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+```
+
+
+#### Group by
+
+```java
+Observable
+    .just(1, 2, 3, 4, 5)
+    .groupBy(integer -> integer % 2 == 0).subscribe(grouped -> {
+        grouped.toList().subscribe(integers -> {
+            log(integers + " (Even: " + grouped.getKey() + ")");
+        });
+    });
+
+    // [1, 3, 5] (Even: false)
+    // [2, 4] (Even: true)
+```
+
+#### Take only the first N values emitted
+
+```java
+Observable
+    .just(1, 2, 3, 4, 5)
+    .take(2)
+    .subscribe(System.out::println);
+
+    // => 1, 2
+```
+
+#### First
+
+```java
+Observable
+    .just(1, 2, 3, 4, 5)
+    .first()
+    .subscribe(System.out::println);
+
+    // => 1
+```
+
+#### Last
+
+```java
+Observable
+    .just(1, 2, 3, 4, 5)
+    .last()
+    .subscribe(System.out::println);
+
+    // => 5
+```
+
+#### Distinct
+
+```java
+Observable
+    .just(1, 2, 1, 3, 4, 2)
+    .distinct()
+    .subscribe(System.out::println);
+
+    // => 1, 2, 3, 4
+```
+
+#### Map()
+
+`Observable`可以发布不同类型的对象
+
+```java
+Observable.just("Hello world!")
+    .map(s -> s.hashCode())
+    .subscribe(i -> log(Integer.toString(i)));
+
+    // => 121287312
+```
+
+另一个`map()`来转化为string类型
+
+```java
+Observable.just("Hello world!")
+    .map(s -> s.hashCode())
+    .map(i -> reverseHashCode(i))
+    .subscribe(str -> log(str));
+
+    // => Hello world!
+```
+
+#### Iterate an array list
+
+```java
+List<User> users = ArrayList<>();
+
+users.add(new User("jon snow"));
+users.add(new User("tyrion lannister"));
+
+Observable
+    .just(users)
+    .concatMap(userList -> Observable.from(userList))
+    .subscribe(user -> log(user.name));
+
+    // concatMap: when applied to an item emitted by the source Observable, returns an Observable
+
+    // => "jon snow", "tyrion lannister"
+```
+
+#### Observe text changes on an EditText (RxBinding)
+
+```java
+ RxTextView.textChangeEvents(editText)
+   .subscribe(e -> log(e.text().toString()));
+
+    // => "s"
+    // => "se"
+    // => "sea"
+    // => "sear"
+    // => "searc"
+    // => "search"
+```
+
+#### Login form (RxBinding)
+
+username和password都大于3位时submit button才可用
+
+```java
+    emailChangeObservable = RxTextView.textChangeEvents(email);
+    passwordChangeObservable = RxTextView.textChangeEvents(password);
+
+    // force-disable the button
+    submitButton.setEnabled(false);
+
+    Observable.combineLatest(emailChangeObservable, passwordChangeObservable,
+                                            (emailObservable, passwordObservable) -> {
+        boolean emailCheck = emailObservable.text().length() >= 3;
+        boolean passwordCheck = passwordObservable.text().length() >= 3;
+        return emailCheck && passwordCheck;
+    }).subscribe(aBoolean -> {
+        submitButton.setEnabled(aBoolean);
+    });
+
+    // submit button will only be clickable if both forms have more than 3 characters each
+```
+
+#### Thread safety (RxJava + RxAndroid + Retrolambda)
+
+```java
+Observable
+    .just(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    .flatMap(this::heavyCalculations)
+    // all the computation will happen in a background thread
+    .subscribeOn(Schedulers.computation())
+    // the result subscription will happen in the UI Thread
+    .observeOn(AndroidSchedulers.mainThread())
+    // do the calculations for each item and returns it to the subscribable observer
+    .subscribe(number -> log(number));
+```
+#### Persist data async to the database (RxJava + RxAndroid + Retrolambda)
+
+```java
+Observable
+    .just(arrayOfUsers)
+    .concatMap(users1 -> Observable.from(users1))
+    .doOnNext(user -> saveToDataBase(user))
+    .subscribeOn(Schedulers.io())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe();
+
+    // => saves all the users, one by one in the database, async
+```
+
+#### 小贴士
+
+不知道你的代码运行在哪个线程？用这个方法：
+
+```java
+Thread.currentThread().getName()
+```
+
+#### 注意
+
+所有的`subscribe()`返回的`Subscription`对象都要在activity/fragment生命周期结束前调用subscription.unsubscribe()来防止内存泄露。
+
+如果你觉得这太麻烦，看看这个 https://github.com/trello/RxLifecycle，它自动帮你unsubscriptions。
+
+一些人认为，RxJava是关于异步操作的，所以这些操作都会默认发生在不同线程的，但事实并非如此，请别忘了**.observeOn()**和**.subscribeOn().**的定义
+前者在收到数据那个线程的Observer会被subscribed，后者会从一个特殊的线程调度产生的新Observable来代理主线程调用subscribe()产生的Observable
+
+### Bonus: Retrofit
+
+… + RxJava + RxAndroid + Retrolambda
+
+我们来看看例子
+
+```java
+public interface API {
+    @GET("/user/{username}/dogs")
+    Observable<Dog> getAllDogsOf(@Path("username") String username);
+
+    @GET("/dog/{id}")
+    Observable<Dog> getDogInfoById(@Path("id") int dogId);
+}
+```
+
+```java
+new RestService().getAllDogsOf("cesarferreira")
+    .doOnSubscribe(() -> {  /* starting request */
+        // TODO show Loading Spinner
+    })
+     .doOnCompleted(() -> { /* finished request */
+        // TODO hide Loading Spinner
+    })
+    // request webservice for each dog id with all info
+    .flatMap(dogId -> new RestService().getDogInfoById(dogId))
+    .doOnError(throwable -> {
+        /* log the error */
+    })
+    .onErrorResumeNext(Observable.<~>empty())
+    .subscribeOn(Schedulers.newThread())
+    .observeOn(AndroidSchedulers.mainThread())
+    .subscribe(dogs -> {
+        // TODO do what you want with the list of Dogs
+    });
+```
+
+相关链接
+
+- RxJava official documentaion https://github.com/ReactiveX/RxJava/wiki;
+- Great article series by Dan Lew on his blog http://blog.danlew.net/;
+- Jake Wharton on Retrofit and RxJava (Netflix Open Source Meetup S02E02 07/2014) https://speakerdeck.com/jakewharton/2014-1;
+- Kaushik Gopal (co-host of the great fragmented podcast) provides primers on RxJava and RxAndroid https://www.youtube.com/watch?v=k3D0cWyNno4;
+- Awesome list of examples by Kaushik Gopal https://github.com/kaushikgopal/RxJava-Android-Samples;
+- Jake Wharton on Testing, SqlBrite, NotRxAndroid, RxJava and Much More http://fragmentedpodcast.com/episodes/7/;
+- Retrofit by Square http://square.github.io/retrofit/
+- RxJava https://github.com/ReactiveX/RxJava;
+- RxAndroid https://github.com/ReactiveX/RxAndroid.
